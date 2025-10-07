@@ -1,4 +1,5 @@
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
+import { useNavigation } from '../context/NavigationContext';
 // constants
 import { positionCameraConstants, positionCameraConstantsMobile } from '../constants/positionCamera';
 // hooks
@@ -6,6 +7,14 @@ import useCameraFly from './useCameraFly';
 import useResponsive from './useResponsive';
 
 const useExperience = () => {
+
+    const {
+        moveDefault,
+        setActiveBack,
+        setMoveDefault,
+        positionName,
+        setPositionName
+    } = useNavigation();
 
     const cameraRef = useRef(null);
     const controlsRef = useRef(null);
@@ -20,7 +29,6 @@ const useExperience = () => {
 
 
     const actionHandlerClick = ({ name }) => {
-        console.log(name);
         const cfg = isMobile ? positionCameraConstantsMobile[name] : positionCameraConstants[name];
         if (!cfg) return;
         if (positionSceneCurrent.type === 'scene') return;
@@ -31,6 +39,7 @@ const useExperience = () => {
             restoreRotateOnFinish: false,
             onFinishAnimation: () => {
                 setpositionSceneCurrent({ type: 'scene', current: name });
+                setActiveBack(true);
             }
         });
     }
@@ -39,6 +48,28 @@ const useExperience = () => {
         e.stopPropagation();
         actionHandlerClick({ name });
     }
+
+    const moveBackDefault = () => {
+        setActiveBack(false);
+        setMoveDefault(false);
+        setPositionName('default');
+        setpositionSceneCurrent({ type: 'default', current: 'default' });
+        moveTo({
+            data: positionCameraConstants.default,
+            durationSeconds: 1.2,
+            restoreRotateOnFinish: true,
+        });
+    }
+
+    useEffect(() => {
+        if (!moveDefault) return;
+        moveBackDefault()
+    }, [moveDefault]);
+
+    useEffect(() => {
+        if (positionName === 'default') return;
+        actionHandlerClick({ name: positionName });
+    }, [positionName]);
 
     return {
         isMobile,
